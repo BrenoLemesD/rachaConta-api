@@ -4,19 +4,18 @@ Backend do RachaConta em Node.js e TypeScript. Valores financeiros trafegam e s�
 
 ## Subir o projeto
 
-1. Suba o Postgres:
+A API roda **local** (`npm run dev`). Só o **banco** fica no Postgres do Supabase. Não há Postgres local.
 
-```bash
-docker compose up -d
-```
-
-2. Copie o ambiente, se ainda não existir `.env`:
+1. Copie o ambiente e cole as URLs do banco (Supabase → Settings → Database):
 
 ```bash
 copy .env.example .env
 ```
 
-3. Instale, crie as tabelas e rode as categorias padrão (Viagem, Bar, Restaurante e iFood):
+- `DATABASE_URL` — pooler, porta **6543** (a API usa esta)
+- `DIRECT_URL` — conexão direta, porta **5432** (o Prisma usa nas migrations)
+
+2. Instale, crie as tabelas no Supabase e rode as categorias padrão (Viagem, Bar, Restaurante e iFood):
 
 ```bash
 npm install

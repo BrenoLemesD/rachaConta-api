@@ -6,7 +6,8 @@ Responda em português. Commits e mensagens de PR também em português, no infi
 
 ## Stack
 
-- Express 4, TypeScript strict, Zod, Prisma, PostgreSQL, JWT, Vitest
+- Express 4, TypeScript strict, Zod, Prisma, JWT, Vitest
+- API local (`npm run dev`); **somente o Postgres** fica no Supabase (sem banco local)
 - Swagger em `/api/docs` (spec em `src/docs/openapi.ts`)
 - Valores financeiros **sempre em centavos (inteiro)**. Nunca use `float`/`number` decimal para dinheiro persistido ou calculado.
 
@@ -62,7 +63,6 @@ Não coloque Prisma nem regra de saldo no controller.
 ## Comandos
 
 ```bash
-docker compose up -d
 npm install
 npx prisma generate
 npm run db:setup
@@ -70,6 +70,8 @@ npm run dev          # http://localhost:3333
 npm test
 npx tsc --noEmit
 ```
+
+Banco: Postgres no Supabase. A API continua local. `DATABASE_URL` é o pooler (6543); `DIRECT_URL` é a conexão direta (5432) para migrations. Não recriar Postgres local nem `docker-compose` de banco.
 
 Prisma: altere `prisma/schema.prisma` e gere migration versionada. Seed só para categorias padrão (Viagem, Bar, Restaurante, iFood).
 

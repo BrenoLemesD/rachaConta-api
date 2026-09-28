@@ -4,6 +4,7 @@ import { z } from "zod";
 const schema = z.object({
   PORT: z.coerce.number().default(3333),
   DATABASE_URL: z.string().min(1),
+  DIRECT_URL: z.string().min(1),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default("7d"),
   GOOGLE_CLIENT_ID: z.string().optional().default(""),
@@ -28,6 +29,7 @@ const dados = resultado.data;
 export const env = {
   port: dados.PORT,
   databaseUrl: dados.DATABASE_URL,
+  directUrl: dados.DIRECT_URL,
   jwtSecret: dados.JWT_SECRET,
   jwtExpiresIn: dados.JWT_EXPIRES_IN,
   googleClientId: dados.GOOGLE_CLIENT_ID,
