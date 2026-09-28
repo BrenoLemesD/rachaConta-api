@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: rachaconta-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rachaconta
+    ports:
+      - "5432:5432"
+    volumes:
+      - rachaconta_pg:/var/lib/postgresql/data
+
+volumes:
+  rachaconta_pg:

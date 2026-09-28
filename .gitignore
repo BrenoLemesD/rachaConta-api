@@ -1,0 +1,39 @@
+# Dependências e build
+node_modules/
+dist/
+build/
+coverage/
+.vitest/
+*.tsbuildinfo
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema e IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Prisma / Docker
+prisma/*.db
+prisma/*.db-journal
+docker-data/
+
+# Temporários
+tmp/
+temp/
+*.tmp

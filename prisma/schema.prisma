@@ -1,0 +1,335 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Tema {
+  CLARO
+  ESCURO
+}
+
+enum TipoChavePix {
+  CPF
+  EMAIL
+  TELEFONE
+  ALEATORIA
+}
+
+enum StatusAmizade {
+  PENDENTE
+  ACEITO
+  RECUSADO
+}
+
+enum TipoAmizade {
+  USUARIO
+  EXTERNO
+}
+
+enum PapelGrupo {
+  ADMIN
+  MEMBRO
+}
+
+enum ModoDivisao {
+  IGUAL
+  PERCENTUAL
+  VALOR
+}
+
+enum StatusDivida {
+  EM_ABERTO
+  QUITADA
+  CALOTE
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  nome          String
+  email         String?  @unique
+  senhaHash     String?
+  telefone      String?
+  fotoUrl       String?
+  googleId      String?  @unique
+  convidado     Boolean  @default(false)
+  tema          Tema     @default(CLARO)
+  cor           String   @default("#16A34A")
+  moedaPadrao   String   @default("BRL")
+  tokenVersao   Int      @default(0)
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  categorias           Categoria[]
+  chavesPix            ChavePix[]
+  amizadesEnviadas     Amizade[]          @relation("AmizadeSolicitante")
+  amizadesRecebidas    Amizade[]          @relation("AmizadeDestinatario")
+  gruposCriados        Grupo[]
+  membros              GrupoUsuario[]
+  convitesCriados      ConviteGrupo[]
+  despesasCriadas      Despesa[]          @relation("DespesaCriador")
+  despesasAtualizadas  Despesa[]          @relation("DespesaAtualizador")
+  despesasExcluidas    Despesa[]          @relation("DespesaExclusao")
+  pagamentos           DespesaPagador[]
+  participacoes        DespesaParticipante[]
+  itensParticipacoes   ItemParticipante[]
+  dividasComoCredor    Divida[]           @relation("DividaCredor")
+  dividasComoDevedor   Divida[]           @relation("DividaDevedor")
+  cobrancasEnviadas    Cobranca[]         @relation("CobrancaCredor")
+  cobrancasRecebidas   Cobranca[]         @relation("CobrancaDevedor")
+  auditorias           AuditoriaDespesa[]
+  resetTokens          ResetSenhaToken[]
+}
+
+model Categoria {
+  id         String    @id @default(uuid())
+  nome       String
+  icone      String
+  cor        String
+  usuarioId  String?
+  usuario    Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  arquivada  Boolean   @default(false)
+  sistema    Boolean   @default(false)
+  criadoEm   DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
+  despesas   Despesa[]
+
+  @@index([usuarioId])
+  @@index([sistema])
+}
+
+model ChavePix {
+  id           String       @id @default(uuid())
+  usuarioId    String
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo         TipoChavePix
+  valor        String
+  nomeTitular  String
+  criadoEm     DateTime     @default(now())
+  atualizadoEm DateTime     @updatedAt
+
+  @@index([usuarioId])
+}
+
+model Amizade {
+  id              String        @id @default(uuid())
+  solicitanteId   String
+  solicitante     Usuario       @relation("AmizadeSolicitante", fields: [solicitanteId], references: [id], onDelete: Cascade)
+  destinatarioId  String?
+  destinatario    Usuario?      @relation("AmizadeDestinatario", fields: [destinatarioId], references: [id], onDelete: Cascade)
+  tipo            TipoAmizade
+  status          StatusAmizade @default(PENDENTE)
+  nomeContato     String?
+  emailContato    String?
+  telefoneContato String?
+  criadoEm        DateTime      @default(now())
+  atualizadoEm    DateTime      @updatedAt
+
+  @@index([solicitanteId])
+  @@index([destinatarioId])
+  @@index([status])
+}
+
+model Grupo {
+  id                 String   @id @default(uuid())
+  nome               String
+  descricao          String?
+  imagemUrl          String?
+  moeda              String   @default("BRL")
+  prazoPagamentoDias Int      @default(7)
+  recorrencia        String?
+  codigoConvite      String   @unique
+  criadoPorId        String
+  criadoPor          Usuario  @relation(fields: [criadoPorId], references: [id])
+  criadoEm           DateTime @default(now())
+  atualizadoEm       DateTime @updatedAt
+
+  membros   GrupoUsuario[]
+  despesas  Despesa[]
+  dividas   Divida[]
+  convites  ConviteGrupo[]
+  cobrancas Cobranca[]
+
+  @@index([criadoPorId])
+}
+
+model GrupoUsuario {
+  id        String     @id @default(uuid())
+  grupoId   String
+  grupo     Grupo      @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  usuarioId String
+  usuario   Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  papel     PapelGrupo @default(MEMBRO)
+  entrouEm  DateTime   @default(now())
+
+  @@unique([grupoId, usuarioId])
+  @@index([grupoId])
+  @@index([usuarioId])
+}
+
+model ConviteGrupo {
+  id          String    @id @default(uuid())
+  grupoId     String
+  grupo       Grupo     @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  codigo      String    @unique
+  criadoPorId String
+  criadoPor   Usuario   @relation(fields: [criadoPorId], references: [id])
+  ativo       Boolean   @default(true)
+  expiraEm    DateTime?
+  criadoEm    DateTime  @default(now())
+
+  @@index([grupoId])
+}
+
+model Despesa {
+  id                   String      @id @default(uuid())
+  grupoId              String
+  grupo                Grupo       @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  categoriaId          String?
+  categoria            Categoria?  @relation(fields: [categoriaId], references: [id])
+  descricao            String
+  valorBaseCentavos    Int
+  percentualServicoBps Int         @default(0)
+  taxaExtraCentavos    Int         @default(0)
+  valorTotalCentavos   Int
+  modoDivisao          ModoDivisao
+  prazoPagamento       DateTime
+  criadoPorId          String
+  criadoPor            Usuario     @relation("DespesaCriador", fields: [criadoPorId], references: [id])
+  atualizadoPorId      String?
+  atualizadoPor        Usuario?    @relation("DespesaAtualizador", fields: [atualizadoPorId], references: [id])
+  excluidoPorId        String?
+  excluidoPor          Usuario?    @relation("DespesaExclusao", fields: [excluidoPorId], references: [id])
+  excluidoEm           DateTime?
+  criadoEm             DateTime    @default(now())
+  atualizadoEm         DateTime    @updatedAt
+
+  pagadores     DespesaPagador[]
+  participantes DespesaParticipante[]
+  itens         ItemDespesa[]
+  auditorias    AuditoriaDespesa[]
+
+  @@index([grupoId])
+  @@index([grupoId, excluidoEm])
+  @@index([categoriaId])
+  @@index([criadoPorId])
+  @@index([criadoEm])
+}
+
+model DespesaPagador {
+  id            String  @id @default(uuid())
+  despesaId     String
+  despesa       Despesa @relation(fields: [despesaId], references: [id], onDelete: Cascade)
+  usuarioId     String
+  usuario       Usuario @relation(fields: [usuarioId], references: [id])
+  valorCentavos Int
+
+  @@index([despesaId])
+  @@index([usuarioId])
+}
+
+model DespesaParticipante {
+  id            String  @id @default(uuid())
+  despesaId     String
+  despesa       Despesa @relation(fields: [despesaId], references: [id], onDelete: Cascade)
+  usuarioId     String
+  usuario       Usuario @relation(fields: [usuarioId], references: [id])
+  percentualBps Int?
+  valorCentavos Int
+
+  @@index([despesaId])
+  @@index([usuarioId])
+}
+
+model ItemDespesa {
+  id            String  @id @default(uuid())
+  despesaId     String
+  despesa       Despesa @relation(fields: [despesaId], references: [id], onDelete: Cascade)
+  descricao     String
+  valorCentavos Int
+
+  participantes ItemParticipante[]
+
+  @@index([despesaId])
+}
+
+model ItemParticipante {
+  id            String      @id @default(uuid())
+  itemId        String
+  item          ItemDespesa @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  usuarioId     String
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
+  valorCentavos Int
+
+  @@index([itemId])
+  @@index([usuarioId])
+}
+
+model Divida {
+  id             String       @id @default(uuid())
+  grupoId        String
+  grupo          Grupo        @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  credorId       String
+  credor         Usuario      @relation("DividaCredor", fields: [credorId], references: [id])
+  devedorId      String
+  devedor        Usuario      @relation("DividaDevedor", fields: [devedorId], references: [id])
+  valorCentavos  Int
+  status         StatusDivida @default(EM_ABERTO)
+  vencimento     DateTime?
+  cobrancas      Int          @default(0)
+  ultimaCobranca DateTime?
+  criadoEm       DateTime     @default(now())
+  atualizadoEm   DateTime     @updatedAt
+
+  @@index([grupoId])
+  @@index([grupoId, status])
+  @@index([credorId])
+  @@index([devedorId])
+}
+
+model Cobranca {
+  id            String   @id @default(uuid())
+  grupoId       String
+  grupo         Grupo    @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  dividaId      String?
+  credorId      String
+  credor        Usuario  @relation("CobrancaCredor", fields: [credorId], references: [id])
+  devedorId     String
+  devedor       Usuario  @relation("CobrancaDevedor", fields: [devedorId], references: [id])
+  valorCentavos Int
+  mensagem      String?
+  criadoEm      DateTime @default(now())
+
+  @@index([grupoId])
+  @@index([credorId])
+  @@index([devedorId])
+}
+
+model AuditoriaDespesa {
+  id        String   @id @default(uuid())
+  despesaId String
+  despesa   Despesa  @relation(fields: [despesaId], references: [id], onDelete: Cascade)
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  acao      String
+  detalhes  Json?
+  criadoEm  DateTime @default(now())
+
+  @@index([despesaId])
+  @@index([usuarioId])
+}
+
+model ResetSenhaToken {
+  id        String   @id @default(uuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiraEm  DateTime
+  usado     Boolean  @default(false)
+  criadoEm  DateTime @default(now())
+
+  @@index([usuarioId])
+}
